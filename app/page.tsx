@@ -107,25 +107,30 @@ export default function HomePage() {
 
             <Card className="glass-card p-6">
               <div className="h-[500px] rounded-lg overflow-hidden border border-border relative">
-                <Canvas
-                  camera={{ position: [1.25, 0.8, 2.0], fov: 58 }}
-                  gl={{ antialias: true, alpha: true }}
-                  dpr={[1, 1.25]}
-                >
-                  <VolumeRendererScene
-                    isRunning={isRunning}
-                    quality={quality}
-                    onPerformanceUpdate={(fps, frameTime) => {
-                      const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
-                      setScore(newScore)
-                      if (newScore >= 90) setGrade("Platinum")
-                      else if (newScore >= 75) setGrade("Gold")
-                      else if (newScore >= 60) setGrade("Silver")
-                      else if (newScore >= 45) setGrade("Bronze")
-                      else setGrade("Basic")
-                    }}
-                  />
-                </Canvas>
+                {(() => {
+                  const dprRange = quality === 'low' ? [1, 1.25] : quality === 'medium' ? [1.5, 2] : [2, 2]
+                  return (
+                    <Canvas
+                      camera={{ position: [1.25, 0.8, 2.0], fov: 58 }}
+                      gl={{ antialias: true, alpha: true }}
+                      dpr={dprRange}
+                    >
+                      <VolumeRendererScene
+                        isRunning={isRunning}
+                        quality={quality}
+                        onPerformanceUpdate={(fps, frameTime) => {
+                          const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
+                          setScore(newScore)
+                          if (newScore >= 90) setGrade("Platinum")
+                          else if (newScore >= 75) setGrade("Gold")
+                          else if (newScore >= 60) setGrade("Silver")
+                          else if (newScore >= 45) setGrade("Bronze")
+                          else setGrade("Basic")
+                        }}
+                      />
+                    </Canvas>
+                  )
+                })()}
                 {!isRunning && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
                     <div className="text-center">

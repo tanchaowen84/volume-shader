@@ -62,22 +62,22 @@ function getQualityParams(q: Quality) {
     }
   if (q === "medium")
     return {
-      iMaxSteps: 512,
-      iStepScale: 0.75,
-      iMaxDist: 35.0,
-      iEpsilon: 0.0012,
-      iDoBinarySearch: 1,
+      iMaxSteps: 1024,
+      iStepScale: 0.55,
+      iMaxDist: 50.0,
+      iEpsilon: 0.0008,
+      iDoBinarySearch: 0,
       // reflections
       uReflectMode: 1,            // single reflection ray
-      uReflectStrength: 0.3,
-      uRoughness: 0.0,
-      uReflMaxSteps: 96,
+      uReflectStrength: 0.35,
+      uRoughness: 0.05,
+      uReflMaxSteps: 128,
       uReflDoBinarySearch: 0,
       uF0: 0.06,
       // ambient occlusion
       uAOEnabled: 1,
-      uAOSamples: 6,
-      uAORadius: 0.5,
+      uAOSamples: 8,
+      uAORadius: 0.6,
       uAOIntensity: 1.0,
       // soft shadow
       uShadowEnabled: 0,
@@ -85,26 +85,26 @@ function getQualityParams(q: Quality) {
       uShadowSoftK: 10.0,
     }
   return {
-    iMaxSteps: 768,
-    iStepScale: 0.6,
-    iMaxDist: 50.0,
-    iEpsilon: 0.0009,
+    iMaxSteps: 1024,
+    iStepScale: 0.48,
+    iMaxDist: 60.0,
+    iEpsilon: 0.0006,
     iDoBinarySearch: 1,
     // reflections
     uReflectMode: 2,              // glossy single bounce
-    uReflectStrength: 0.5,
-    uRoughness: 0.2,
-    uReflMaxSteps: 192,
+    uReflectStrength: 0.55,
+    uRoughness: 0.22,
+    uReflMaxSteps: 256,
     uReflDoBinarySearch: 1,
     uF0: 0.06,
     // ambient occlusion
     uAOEnabled: 1,
-    uAOSamples: 10,
-    uAORadius: 0.75,
+    uAOSamples: 12,
+    uAORadius: 0.8,
     uAOIntensity: 1.2,
     // soft shadow
     uShadowEnabled: 1,
-    uShadowSteps: 24,
+    uShadowSteps: 32,
     uShadowSoftK: 8.0,
   }
 }
