@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
@@ -275,7 +275,7 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     iBailout: { value: 2.7 },
     iPower: { value: 8 },
     iDoBinarySearch: { value: 1 },
-  }), [camera, gl, size.height, size.width, isRunning])
+  }), [camera, gl, size.height, size.width])
 
   useFrame((state) => {
     if (!matRef.current) return
@@ -325,6 +325,14 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
 }
 
 export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
+  const { camera } = useThree()
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera
+    cam.position.set(3, 2, 6)
+    cam.lookAt(0, 0, 0)
+    cam.updateProjectionMatrix()
+    cam.updateMatrixWorld()
+  }, [camera])
   return (
     <>
       <ScreenShader quality={quality} isRunning={isRunning} />

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { VolumeRenderer } from "@/components/volume-renderer"
+import { Canvas } from "@react-three/fiber"
+import { VolumeRendererScene } from "@/components/volume-renderer-scene"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Play, Square, Zap, Settings } from "lucide-react"
@@ -105,23 +106,34 @@ export default function HomePage() {
             </Card>
 
             <Card className="glass-card p-6">
-              <div className="h-[500px] rounded-lg overflow-hidden border border-border">
-                <VolumeRenderer
-                  isRunning={isRunning}
-                  quality={quality}
-                  onPerformanceUpdate={(fps, frameTime) => {
-                    // Calculate score based on performance
-                    const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
-                    setScore(newScore)
-
-                    // Update grade
-                    if (newScore >= 90) setGrade("Platinum")
-                    else if (newScore >= 75) setGrade("Gold")
-                    else if (newScore >= 60) setGrade("Silver")
-                    else if (newScore >= 45) setGrade("Bronze")
-                    else setGrade("Basic")
-                  }}
-                />
+              <div className="h-[500px] rounded-lg overflow-hidden border border-border relative">
+                <Canvas
+                  camera={{ position: [3, 2, 6], fov: 60 }}
+                  gl={{ antialias: true, alpha: true }}
+                  dpr={[1, 1.25]}
+                >
+                  <VolumeRendererScene
+                    isRunning={isRunning}
+                    quality={quality}
+                    onPerformanceUpdate={(fps, frameTime) => {
+                      const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
+                      setScore(newScore)
+                      if (newScore >= 90) setGrade("Platinum")
+                      else if (newScore >= 75) setGrade("Gold")
+                      else if (newScore >= 60) setGrade("Silver")
+                      else if (newScore >= 45) setGrade("Bronze")
+                      else setGrade("Basic")
+                    }}
+                  />
+                </Canvas>
+                {!isRunning && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">🔮</div>
+                      <p className="text-white/80">Click Start Test to begin volume rendering</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
