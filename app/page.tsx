@@ -4,14 +4,14 @@ import { useState } from "react"
 import { VolumeRenderer } from "@/components/volume-renderer"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Play, Square, Zap } from "lucide-react"
+import { Play, Square, Zap, Settings } from "lucide-react"
+import Link from "next/link"
 
 export default function HomePage() {
   const [isRunning, setIsRunning] = useState(false)
   const [quality, setQuality] = useState<"low" | "medium" | "high">("medium")
   const [score, setScore] = useState(0)
   const [grade, setGrade] = useState("Basic")
-  const [frameTime, setFrameTime] = useState(0)
 
   const handleStart = () => {
     setIsRunning(true)
@@ -27,11 +27,17 @@ export default function HomePage() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass-card border-b">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Zap className="w-8 h-8 text-primary neon-glow" />
               <h1 className="text-2xl font-bold neon-text">Volume Shader Benchmark</h1>
             </div>
+            <Link href="/compare">
+              <Button variant="outline" size="sm">
+                <Settings className="w-4 h-4 mr-2" />
+                Compare Renderers
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -104,7 +110,6 @@ export default function HomePage() {
                   isRunning={isRunning}
                   quality={quality}
                   onPerformanceUpdate={(fps, frameTime) => {
-                    setFrameTime(frameTime)
                     // Calculate score based on performance
                     const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
                     setScore(newScore)

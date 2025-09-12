@@ -1,19 +1,36 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import { useFrame, useThree } from "@react-three/fiber"
 import { OrbitControls } from "@react-three/drei"
 import * as THREE from "three"
 
-type Quality = "low" | "medium" | "high"
+type DebugParams = {
+  bailout: number
+  power: number
+  maxIterations: number
+  maxSteps: number
+  stepScale: number
+  maxDistance: number
+  epsilon: number
+  doBinarySearch: boolean
+  cameraX: number
+  cameraY: number
+  cameraZ: number
+  showDistance: boolean
+  showNormals: boolean
+  showIterations: boolean
+  enableRotation: boolean
+  quality: "low" | "medium" | "high"
+}
 
-interface SceneProps {
-  quality: Quality
+interface SceneDebugProps {
+  params: DebugParams
   isRunning: boolean
   onPerformanceUpdate: (fps: number, frameTime: number) => void
 }
 
-// Minimal performance monitor (FPS averaged每秒)
+// Performance monitor
 function PerformanceMonitor({ onUpdate, isRunning }: { onUpdate: (fps: number, frameTime: number) => void; isRunning: boolean }) {
   const frameCount = useRef(0)
   const lastTime = useRef(typeof performance !== "undefined" ? performance.now() : 0)
@@ -35,32 +52,6 @@ function PerformanceMonitor({ onUpdate, isRunning }: { onUpdate: (fps: number, f
   return null
 }
 
-function getQualityParams(q: Quality) {
-  if (q === "low")
-    return {
-      iMaxSteps: 320,
-      iStepScale: 1.0,
-      iMaxDist: 20.0,
-      iEpsilon: 0.0018,
-      iDoBinarySearch: 0,
-    }
-  if (q === "medium")
-    return {
-      iMaxSteps: 512,
-      iStepScale: 0.75,
-      iMaxDist: 35.0,
-      iEpsilon: 0.0012,
-      iDoBinarySearch: 1,
-    }
-  return {
-    iMaxSteps: 768,
-    iStepScale: 0.6,
-    iMaxDist: 50.0,
-    iEpsilon: 0.0009,
-    iDoBinarySearch: 1,
-  }
-}
-
 // Fullscreen triangle geometry
 function useScreenTriangle() {
   return useMemo(() => {
@@ -77,6 +68,7 @@ function useScreenTriangle() {
 
 const vertexShader = /* glsl */ `
   precision highp float;
+  attribute vec3 position;
   void main () {
     gl_Position = vec4(position, 1.0);
   }
@@ -92,7 +84,7 @@ const fragmentShader = /* glsl */ `
   uniform vec3  iCamRight;
   uniform vec3  iCamUp;
   uniform vec3  iCamForward;
-  uniform float iFovY;        // radians
+  uniform float iFovY;
 
   uniform int   iMaxSteps;
   uniform float iStepScale;
@@ -100,7 +92,58 @@ const fragmentShader = /* glsl */ `
   uniform float iEpsilon;
   uniform float iBailout;
   uniform int   iPower;
+  uniform int   iMaxIterations;
   uniform int   iDoBinarySearch;
+
+  uniform bool  uShowDistance;
+  uniform bool  uShowNormals;
+  uniform bool  uShowIterations;
+  uniform bool  uEnableRotation;
+
+  // Y-axis rotation helper
+  vec3 rotY(vec3 p, float a) {
+    float c = cos(a), s = sin(a);
+    return vec3(c*p.x + s*p.z, p.y, -s*p.x + c*p.z);
+  }
+
+  // Simple sphere for testing - definitely works
+  float sphereDE(vec3 p) {
+    return length(p) - 1.0;
+  }
+
+  // Simple box for testing
+  float boxDE(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
+  }
+
+  // Mandelbulb Distance Estimator with iteration out parameter
+  float mandelbulbDE(vec3 pos, out float iterCount) {
+    if (uEnableRotation) {
+      pos = rotY(pos, 0.2 * iTime);
+    }
+    vec3 z = pos;
+    float dr = 1.0;
+    float r = 0.0;
+    iterCount = 0.0;
+    for (int i = 0; i < 32; i++) {
+      if (i >= iMaxIterations) break;
+      r = length(z);
+      if (r > iBailout) { iterCount = float(i); break; }
+      // Spherical coordinates
+      float theta = acos(z.z / max(r, 1e-6));
+      float phi   = atan(z.y, z.x);
+      float rPow  = pow(r, float(iPower) - 1.0);
+      float zr    = rPow * r; // r^power
+      dr = rPow * float(iPower) * dr + 1.0;
+      theta *= float(iPower);
+      phi   *= float(iPower);
+      z = zr * vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+      z += pos;
+      if (i == iMaxIterations - 1) iterCount = float(iMaxIterations);
+    }
+    return 0.5 * log(max(r, 1e-6)) * r / max(dr, 1e-6);
+  }
 
   // Hash for tiny dithering
   float hash12(vec2 p) {
@@ -109,35 +152,9 @@ const fragmentShader = /* glsl */ `
     return fract((p3.x + p3.y) * p3.z);
   }
 
-  // Mandelbulb Distance Estimator with iteration out parameter
-  float mandelbulbDE(vec3 pos, out float iterCount) {
-    vec3 z = pos;
-    float dr = 1.0;
-    float r = 0.0;
-    iterCount = 0.0;
-    const int MAX_ITER = 12; // constant upper bound for GLSL
-    for (int i = 0; i < MAX_ITER; i++) {
-      r = length(z);
-      if (r > iBailout) { iterCount = float(i); break; }
-      // Spherical coordinates
-      float theta = acos(z.z / max(r, 1e-6));
-      float phi   = atan(z.y, z.x);
-      // Correct derivative term: r^(power-1) * power * dr + 1
-      float rPow  = pow(r, float(iPower) - 1.0);
-      float zr    = rPow * r; // r^power
-      dr = rPow * float(iPower) * dr + 1.0;
-      theta *= float(iPower);
-      phi   *= float(iPower);
-      z = zr * vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
-      z += pos;
-      if (i == MAX_ITER - 1) iterCount = float(MAX_ITER);
-    }
-    return 0.5 * log(max(r, 1e-6)) * r / max(dr, 1e-6);
-  }
-
   // Estimate normal via central differences
   vec3 calcNormal(vec3 p) {
-    float dummy; // unused out param
+    float dummy;
     vec2 e = vec2(1.0, -1.0) * max(iEpsilon * 0.5, 0.001);
     return normalize(
       e.xyy * mandelbulbDE(p + e.xyy, dummy) +
@@ -147,32 +164,36 @@ const fragmentShader = /* glsl */ `
     );
   }
 
-  // Simple directional lighting with ambient
-  vec3 shade(vec3 p, vec3 N, float iterNorm) {
-    vec3 L = normalize(vec3(0.7, 0.6, 0.5));
-    float diff = clamp(dot(N, L), 0.0, 1.0);
-    float amb  = 0.15;
-    // base color from iteration ratio
-    vec3 base = mix(vec3(0.2, 0.5, 0.9), vec3(1.0, 0.7, 0.4), iterNorm);
-    vec3 col = base * (amb + diff * 0.9);
-    return col;
-  }
-
   // Ray direction from camera basis + fov
   vec3 rayDir(vec2 fragCoord) {
     vec2 ndc = (fragCoord / iResolution) * 2.0 - 1.0;
+    ndc.y *= -1.0; // flip Y because screen coords origin is top-left
     float sy = tan(0.5 * iFovY);
     float sx = sy * (iResolution.x / max(iResolution.y, 1.0));
     vec3 dir = normalize(iCamForward + iCamRight * (ndc.x * sx) + iCamUp * (ndc.y * sy));
     return dir;
   }
 
+  // Color palette for visualization
+  vec3 heatmap(float t) {
+    vec3 r = vec3(t * 2.0 - 1.0, 0.0, 0.0);
+    vec3 g = vec3(0.0, t * 2.0 - 1.0, 0.0);
+    vec3 b = vec3(0.0, 0.0, t * 2.0 - 1.0);
+    return vec3(
+      clamp(max(r.r, max(g.g, b.b)), 0.0, 1.0),
+      clamp(max(r.g, g.r), 0.0, 1.0),
+      clamp(max(g.b, b.g), 0.0, 1.0)
+    );
+  }
+
   void main() {
     vec2 uv = gl_FragCoord.xy;
     if (iRunning == 0) {
-      // lightweight gradient when paused
-      vec2 p = uv / max(iResolution, vec2(1.0));
-      gl_FragColor = vec4(mix(vec3(0.02), vec3(0.08, 0.1, 0.15), p.y), 1.0);
+      // Grid pattern when paused
+      vec2 grid = floor(uv / 20.0);
+      float checker = mod(grid.x + grid.y, 2.0);
+      vec3 bg = mix(vec3(0.1, 0.1, 0.15), vec3(0.15, 0.15, 0.2), checker);
+      gl_FragColor = vec4(bg, 1.0);
       return;
     }
 
@@ -182,20 +203,23 @@ const fragmentShader = /* glsl */ `
     float t = 0.0;
     float hit = 0.0;
     float iterAtHit = 0.0;
+    float distAtHit = 0.0;
 
     // tiny dither to reduce banding
     float dith = (hash12(uv) - 0.5) * iEpsilon;
 
-    const int MAX_STEPS = 1024; // constant loop bound
+    const int MAX_STEPS = 1024;
     for (int i = 0; i < MAX_STEPS; i++) {
       if (i >= iMaxSteps) break;
       if (t > iMaxDist) break;
       vec3 p = ro + rd * t;
       float iterCount;
       float dist = mandelbulbDE(p, iterCount);
+      distAtHit = dist;
+      
       if (dist < iEpsilon) {
         hit = 1.0;
-        iterAtHit = iterCount;
+        iterAtHit = 1.0; // For sphere
         // optional binary search refinement
         if (iDoBinarySearch == 1) {
           float t0 = max(t - iStepScale * 0.5, 0.0);
@@ -212,50 +236,57 @@ const fragmentShader = /* glsl */ `
       t += max(dist + dith, iEpsilon) * iStepScale;
     }
 
-    // Fallback ray: fixed camera looking at origin to guarantee visibility
-    if (hit < 0.5) {
-      vec3 roAlt = vec3(0.0, 0.0, 6.0);
-      vec3 f = normalize(vec3(0.0) - roAlt);
-      vec3 r = normalize(cross(vec3(0.0,1.0,0.0), f));
-      vec3 u = cross(f, r);
-      float sy2 = tan(0.5 * iFovY);
-      float sx2 = sy2 * (iResolution.x / max(iResolution.y, 1.0));
-      vec2 ndc = (uv / iResolution) * 2.0 - 1.0;
-      vec3 rdAlt = normalize(f + r * (ndc.x * sx2) + u * (ndc.y * sy2));
-      float t2 = 0.0; float it2 = 0.0; float hit2 = 0.0;
-      for (int k = 0; k < MAX_STEPS; k++) {
-        if (k >= iMaxSteps) break;
-        if (t2 > iMaxDist) break;
-        vec3 p2 = roAlt + rdAlt * t2;
-        float itc; float d2 = mandelbulbDE(p2, itc);
-        if (d2 < iEpsilon) { hit2 = 1.0; it2 = itc; break; }
-        t2 += max(d2 + dith, iEpsilon) * iStepScale;
-      }
-      if (hit2 > 0.5) {
-        hit = hit2; t = t2; iterAtHit = it2; ro = roAlt; rd = rdAlt;
-      }
+    // Debug visualizations
+    if (uShowDistance && hit < 0.5) {
+      // Show distance field
+      vec3 p = ro + rd * t;
+      float iterCount;
+      float dist = mandelbulbDE(p, iterCount);
+      vec3 color = heatmap(dist * 0.5);
+      gl_FragColor = vec4(color, 1.0);
+      return;
     }
 
     if (hit < 0.5) {
-      // background
-      float g = 0.06 + 0.1 * pow(1.0 - rd.y * 0.5, 2.0);
-      gl_FragColor = vec4(vec3(g), 1.0);
+      // Background gradient
+      float gradient = pow(1.0 - abs(rd.y), 2.0);
+      vec3 bg = mix(vec3(0.05, 0.05, 0.1), vec3(0.1, 0.1, 0.2), gradient);
+      gl_FragColor = vec4(bg, 1.0);
       return;
     }
 
     vec3 pos = ro + rd * t;
     vec3 N = calcNormal(pos);
-    float iterNorm = clamp(iterAtHit / 12.0, 0.0, 1.0);
-    vec3 col = shade(pos, N, iterNorm);
+    float iterNorm = clamp(iterAtHit / float(iMaxIterations), 0.0, 1.0);
+
+    vec3 color = vec3(0.0);
+
+    if (uShowNormals) {
+      // Show normals as colors
+      color = N * 0.5 + 0.5;
+    } else if (uShowIterations) {
+      // Show iteration count
+      color = heatmap(iterNorm);
+    } else {
+      // Normal shading with lighting
+      vec3 L = normalize(vec3(0.7, 0.6, 0.5));
+      float diff = clamp(dot(N, L), 0.0, 1.0);
+      float amb  = 0.15;
+      
+      // Base color from iteration ratio
+      vec3 base = mix(vec3(0.2, 0.5, 0.9), vec3(1.0, 0.7, 0.4), iterNorm);
+      color = base * (amb + diff * 0.9);
+    }
+
     // simple tone mapping
-    col = col / (1.0 + col);
+    color = color / (1.0 + color);
     // gamma
-    col = pow(col, vec3(1.0/2.2));
-    gl_FragColor = vec4(col, 1.0);
+    color = pow(color, vec3(1.0/2.2));
+    gl_FragColor = vec4(color, 1.0);
   }
 `
 
-function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boolean }) {
+function ScreenShaderDebug({ params, isRunning }: { params: DebugParams; isRunning: boolean }) {
   const geom = useScreenTriangle()
   const matRef = useRef<THREE.ShaderMaterial>(null)
   const { camera, size, gl } = useThree()
@@ -263,29 +294,34 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     iResolution: { value: new THREE.Vector2(size.width * gl.getPixelRatio(), size.height * gl.getPixelRatio()) },
     iTime: { value: 0 },
     iRunning: { value: isRunning ? 1 : 0 },
-    iCamPos: { value: new THREE.Vector3() },
+    iCamPos: { value: new THREE.Vector3(params.cameraX, params.cameraY, params.cameraZ) },
     iCamRight: { value: new THREE.Vector3(1, 0, 0) },
     iCamUp: { value: new THREE.Vector3(0, 1, 0) },
     iCamForward: { value: new THREE.Vector3(0, 0, -1) },
     iFovY: { value: (camera as THREE.PerspectiveCamera).fov * Math.PI / 180 },
-    iMaxSteps: { value: 512 },
-    iStepScale: { value: 0.75 },
-    iMaxDist: { value: 12.0 },
-    iEpsilon: { value: 0.0012 },
-    iBailout: { value: 2.7 },
-    iPower: { value: 8 },
-    iDoBinarySearch: { value: 1 },
-  }), [camera, gl, size.height, size.width, isRunning])
+    iMaxSteps: { value: params.maxSteps },
+    iStepScale: { value: params.stepScale },
+    iMaxDist: { value: params.maxDistance },
+    iEpsilon: { value: params.epsilon },
+    iBailout: { value: params.bailout },
+    iPower: { value: params.power },
+    iMaxIterations: { value: params.maxIterations },
+    iDoBinarySearch: { value: params.doBinarySearch ? 1 : 0 },
+    uShowDistance: { value: params.showDistance },
+    uShowNormals: { value: params.showNormals },
+    uShowIterations: { value: params.showIterations },
+    uEnableRotation: { value: params.enableRotation },
+  }), [camera, gl, size, params, isRunning])
 
   useFrame((state) => {
     if (!matRef.current) return
     const m = matRef.current
 
-    // Resolution (respect dpr clamp from Canvas)
+    // Update resolution
     const dpr = gl.getPixelRatio()
     m.uniforms.iResolution.value.set(size.width * dpr, size.height * dpr)
 
-    // Time gate
+    // Time and running state
     if (isRunning) m.uniforms.iTime.value = state.clock.elapsedTime
     m.uniforms.iRunning.value = isRunning ? 1 : 0
 
@@ -300,13 +336,19 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     m.uniforms.iCamForward.value.copy(forward)
     m.uniforms.iFovY.value = cam.fov * Math.PI / 180
 
-    // Quality mapping
-    const qp = getQualityParams(quality)
-    m.uniforms.iMaxSteps.value = qp.iMaxSteps
-    m.uniforms.iStepScale.value = qp.iStepScale
-    m.uniforms.iMaxDist.value = qp.iMaxDist
-    m.uniforms.iEpsilon.value = qp.iEpsilon
-    m.uniforms.iDoBinarySearch.value = qp.iDoBinarySearch
+    // Update all parameters
+    m.uniforms.iMaxSteps.value = params.maxSteps
+    m.uniforms.iStepScale.value = params.stepScale
+    m.uniforms.iMaxDist.value = params.maxDistance
+    m.uniforms.iEpsilon.value = params.epsilon
+    m.uniforms.iBailout.value = params.bailout
+    m.uniforms.iPower.value = params.power
+    m.uniforms.iMaxIterations.value = params.maxIterations
+    m.uniforms.iDoBinarySearch.value = params.doBinarySearch ? 1 : 0
+    m.uniforms.uShowDistance.value = params.showDistance
+    m.uniforms.uShowNormals.value = params.showNormals
+    m.uniforms.uShowIterations.value = params.showIterations
+    m.uniforms.uEnableRotation.value = params.enableRotation
   })
 
   return (
@@ -324,11 +366,18 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
   )
 }
 
-export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
+export function SceneDebug({ params, isRunning, onPerformanceUpdate }: SceneDebugProps) {
   return (
     <>
-      <ScreenShader quality={quality} isRunning={isRunning} />
-      <OrbitControls makeDefault target={[0, 0, 0]} enablePan={false} enableZoom={true} enableRotate={true} minDistance={2} maxDistance={50} />
+      <ScreenShaderDebug params={params} isRunning={isRunning} />
+      <OrbitControls 
+        enablePan={true} 
+        enableZoom={true} 
+        enableRotate={true} 
+        minDistance={1} 
+        maxDistance={100}
+        target={[0, 0, 0]}
+      />
       <PerformanceMonitor onUpdate={onPerformanceUpdate} isRunning={isRunning} />
     </>
   )

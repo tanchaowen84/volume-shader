@@ -3,7 +3,8 @@
     "allow": [
       "Bash(xargs:*)",
       "Bash(pnpm install:*)",
-      "WebFetch(domain:cznull.github.io)"
+      "WebFetch(domain:cznull.github.io)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
