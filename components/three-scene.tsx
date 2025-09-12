@@ -43,6 +43,13 @@ function getQualityParams(q: Quality) {
       iMaxDist: 20.0,
       iEpsilon: 0.0018,
       iDoBinarySearch: 0,
+      // reflections
+      uReflectMode: 0,            // off
+      uReflectStrength: 0.0,
+      uRoughness: 0.0,
+      uReflMaxSteps: 0,
+      uReflDoBinarySearch: 0,
+      uF0: 0.05,
     }
   if (q === "medium")
     return {
@@ -51,6 +58,13 @@ function getQualityParams(q: Quality) {
       iMaxDist: 35.0,
       iEpsilon: 0.0012,
       iDoBinarySearch: 1,
+      // reflections
+      uReflectMode: 1,            // single reflection ray
+      uReflectStrength: 0.3,
+      uRoughness: 0.0,
+      uReflMaxSteps: 96,
+      uReflDoBinarySearch: 0,
+      uF0: 0.06,
     }
   return {
     iMaxSteps: 768,
@@ -58,6 +72,13 @@ function getQualityParams(q: Quality) {
     iMaxDist: 50.0,
     iEpsilon: 0.0009,
     iDoBinarySearch: 1,
+    // reflections
+    uReflectMode: 2,              // glossy single bounce
+    uReflectStrength: 0.5,
+    uRoughness: 0.2,
+    uReflMaxSteps: 192,
+    uReflDoBinarySearch: 1,
+    uF0: 0.06,
   }
 }
 
@@ -102,6 +123,14 @@ const fragmentShader = /* glsl */ `
   uniform int   iPower;
   uniform int   iDoBinarySearch;
 
+  // Reflection controls
+  uniform int   uReflectMode;        // 0=off,1=single,2=glossy single
+  uniform float uReflectStrength;    // mix factor scalar (multiplies Fresnel)
+  uniform float uRoughness;          // glossy perturbation magnitude
+  uniform int   uReflMaxSteps;       // max steps for reflection march
+  uniform int   uReflDoBinarySearch; // 0/1
+  uniform float uF0;                 // base reflectance
+
   // Hash for tiny dithering
   float hash12(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * .1031);
@@ -135,6 +164,36 @@ const fragmentShader = /* glsl */ `
     return 0.5 * log(max(r, 1e-6)) * r / max(dr, 1e-6);
   }
 
+  // March helper with configurable step limit (breaks early by uniform)
+  float marchWithLimit(vec3 ro, vec3 rd, int limitSteps, out float tHit, out float iterAtHit) {
+    float t = 0.0;
+    float hit = 0.0;
+    float iterCount = 0.0;
+    const int MAX_STEPS = 1024;
+    for (int i = 0; i < MAX_STEPS; i++) {
+      if (i >= limitSteps) break;
+      if (t > iMaxDist) break;
+      vec3 p = ro + rd * t;
+      float dist = mandelbulbDE(p, iterCount);
+      if (dist < iEpsilon) {
+        hit = 1.0;
+        if (uReflDoBinarySearch == 1) {
+          float t0 = max(t - iStepScale * 0.5, 0.0);
+          float t1 = t;
+          for (int j = 0; j < 6; j++) {
+            float it2; vec3 pm = ro + rd * ((t0 + t1) * 0.5);
+            float dm = mandelbulbDE(pm, it2);
+            if (dm < iEpsilon) t1 = (t0 + t1) * 0.5; else t0 = (t0 + t1) * 0.5;
+          }
+          t = (t0 + t1) * 0.5;
+        }
+        break;
+      }
+      t += max(dist, iEpsilon) * iStepScale;
+    }
+    tHit = t; iterAtHit = iterCount; return hit;
+  }
+
   // Estimate normal via central differences
   vec3 calcNormal(vec3 p) {
     float dummy; // unused out param
@@ -156,6 +215,11 @@ const fragmentShader = /* glsl */ `
     vec3 base = vec3(0.5) + 0.5 * cos(6.28318 * (vec3(iterNorm) + vec3(0.00, 0.15, 0.33)));
     vec3 col = base * (amb + diff * 0.9);
     return col;
+  }
+
+  vec3 skyColor(vec3 dir) {
+    float g = 0.06 + 0.1 * pow(1.0 - dir.y * 0.5, 2.0);
+    return vec3(g);
   }
 
   // Ray direction from camera basis + fov
@@ -247,6 +311,40 @@ const fragmentShader = /* glsl */ `
     vec3 N = calcNormal(pos);
     float iterNorm = clamp(iterAtHit / 12.0, 0.0, 1.0);
     vec3 col = shade(pos, N, iterNorm);
+
+    // Single-bounce reflections
+    if (uReflectMode > 0) {
+      // Fresnel (Schlick)
+      float cosTheta = clamp(dot(N, -rd), 0.0, 1.0);
+      float F = uF0 + (1.0 - uF0) * pow(1.0 - cosTheta, 5.0);
+      float reflW = clamp(F * uReflectStrength, 0.0, 1.0);
+      if (reflW > 1e-3) {
+        vec3 R = reflect(rd, N);
+        if (uReflectMode == 2 && uRoughness > 0.0) {
+          // Build basis around R and jitter
+          vec3 T = normalize(cross(abs(R.y) < 0.99 ? vec3(0.0,1.0,0.0) : vec3(1.0,0.0,0.0), R));
+          vec3 B = cross(R, T);
+          vec2 xi = vec2(hash12(uv), hash12(uv + 37.0));
+          vec3 jitter = (xi.x - 0.5) * T + (xi.y - 0.5) * B;
+          R = normalize(R + uRoughness * jitter);
+        }
+
+        // Start a bit off the surface to avoid self-intersection
+        vec3 ro2 = pos + N * (iEpsilon * 2.0);
+        float tR = 0.0; float itR = 0.0;
+        float hitR = marchWithLimit(ro2, R, uReflMaxSteps, tR, itR);
+        vec3 reflCol;
+        if (hitR > 0.5) {
+          vec3 pR = ro2 + R * tR;
+          vec3 nR = calcNormal(pR);
+          float inR = clamp(itR / 12.0, 0.0, 1.0);
+          reflCol = shade(pR, nR, inR);
+        } else {
+          reflCol = skyColor(R);
+        }
+        col = mix(col, reflCol, reflW);
+      }
+    }
     // simple tone mapping
     col = col / (1.0 + col);
     // gamma
@@ -275,6 +373,13 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     iBailout: { value: 2.7 },
     iPower: { value: 8 },
     iDoBinarySearch: { value: 1 },
+    // reflections defaults (will be overridden per quality in useFrame)
+    uReflectMode: { value: 0 },
+    uReflectStrength: { value: 0.0 },
+    uRoughness: { value: 0.0 },
+    uReflMaxSteps: { value: 0 },
+    uReflDoBinarySearch: { value: 0 },
+    uF0: { value: 0.05 },
   }), [camera, gl, size.height, size.width])
 
   useFrame((state) => {
@@ -307,6 +412,13 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     m.uniforms.iMaxDist.value = qp.iMaxDist
     m.uniforms.iEpsilon.value = qp.iEpsilon
     m.uniforms.iDoBinarySearch.value = qp.iDoBinarySearch
+    // reflections
+    m.uniforms.uReflectMode.value = qp.uReflectMode
+    m.uniforms.uReflectStrength.value = qp.uReflectStrength
+    m.uniforms.uRoughness.value = qp.uRoughness
+    m.uniforms.uReflMaxSteps.value = qp.uReflMaxSteps
+    m.uniforms.uReflDoBinarySearch.value = qp.uReflDoBinarySearch
+    m.uniforms.uF0.value = qp.uF0
   })
 
   return (
