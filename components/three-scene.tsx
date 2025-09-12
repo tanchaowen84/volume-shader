@@ -50,6 +50,15 @@ function getQualityParams(q: Quality) {
       uReflMaxSteps: 0,
       uReflDoBinarySearch: 0,
       uF0: 0.05,
+      // ambient occlusion
+      uAOEnabled: 0,
+      uAOSamples: 0,
+      uAORadius: 0.0,
+      uAOIntensity: 1.0,
+      // soft shadow
+      uShadowEnabled: 0,
+      uShadowSteps: 0,
+      uShadowSoftK: 10.0,
     }
   if (q === "medium")
     return {
@@ -65,6 +74,15 @@ function getQualityParams(q: Quality) {
       uReflMaxSteps: 96,
       uReflDoBinarySearch: 0,
       uF0: 0.06,
+      // ambient occlusion
+      uAOEnabled: 1,
+      uAOSamples: 6,
+      uAORadius: 0.5,
+      uAOIntensity: 1.0,
+      // soft shadow
+      uShadowEnabled: 0,
+      uShadowSteps: 0,
+      uShadowSoftK: 10.0,
     }
   return {
     iMaxSteps: 768,
@@ -79,6 +97,15 @@ function getQualityParams(q: Quality) {
     uReflMaxSteps: 192,
     uReflDoBinarySearch: 1,
     uF0: 0.06,
+    // ambient occlusion
+    uAOEnabled: 1,
+    uAOSamples: 10,
+    uAORadius: 0.75,
+    uAOIntensity: 1.2,
+    // soft shadow
+    uShadowEnabled: 1,
+    uShadowSteps: 24,
+    uShadowSoftK: 8.0,
   }
 }
 
@@ -130,6 +157,15 @@ const fragmentShader = /* glsl */ `
   uniform int   uReflMaxSteps;       // max steps for reflection march
   uniform int   uReflDoBinarySearch; // 0/1
   uniform float uF0;                 // base reflectance
+
+  // Ambient occlusion & soft shadow controls
+  uniform int   uAOEnabled;
+  uniform int   uAOSamples;
+  uniform float uAORadius;
+  uniform float uAOIntensity;
+  uniform int   uShadowEnabled;
+  uniform int   uShadowSteps;
+  uniform float uShadowSoftK;
 
   // Hash for tiny dithering
   float hash12(vec2 p) {
@@ -192,6 +228,39 @@ const fragmentShader = /* glsl */ `
       t += max(dist, iEpsilon) * iStepScale;
     }
     tHit = t; iterAtHit = iterCount; return hit;
+  }
+
+  // Ambient occlusion approximation for SDFs (based on iq's approach)
+  float ambientOcclusion(vec3 p, vec3 n) {
+    if (uAOEnabled == 0) return 1.0;
+    float occ = 0.0;
+    float sca = 1.0;
+    const int AO_ITERS = 16;
+    for (int i = 1; i <= AO_ITERS; i++) {
+      if (i > uAOSamples) break;
+      float hr = (uAORadius / float(max(uAOSamples,1))) * float(i);
+      float itc; float d = mandelbulbDE(p + n * hr, itc);
+      occ += (hr - d) * sca;
+      sca *= 0.8;
+    }
+    return clamp(1.0 - uAOIntensity * occ, 0.0, 1.0);
+  }
+
+  // Soft shadow along light ray (SDF-based)
+  float softShadow(vec3 ro, vec3 rd) {
+    if (uShadowEnabled == 0) return 1.0;
+    float res = 1.0;
+    float t = 0.02;
+    const int SH_STEPS = 64;
+    for (int i = 0; i < SH_STEPS; i++) {
+      if (i >= uShadowSteps) break;
+      float itc; float h = mandelbulbDE(ro + rd * t, itc);
+      if (h < 1e-4) return 0.0;
+      res = min(res, uShadowSoftK * h / t);
+      t += clamp(h, 0.02, 0.25);
+      if (t > iMaxDist) break;
+    }
+    return clamp(res, 0.0, 1.0);
   }
 
   // Estimate normal via central differences
@@ -310,7 +379,15 @@ const fragmentShader = /* glsl */ `
     vec3 pos = ro + rd * t;
     vec3 N = calcNormal(pos);
     float iterNorm = clamp(iterAtHit / 12.0, 0.0, 1.0);
-    vec3 col = shade(pos, N, iterNorm);
+
+    // Lighting terms with AO and soft shadow
+    vec3 Ld = normalize(vec3(0.7, 0.6, 0.5));
+    float diff = clamp(dot(N, Ld), 0.0, 1.0);
+    float amb  = 0.15;
+    float ao = ambientOcclusion(pos, N);
+    float sh = softShadow(pos + N * (iEpsilon * 2.0), Ld);
+    vec3 base = vec3(0.5) + 0.5 * cos(6.28318 * (vec3(iterNorm) + vec3(0.00, 0.15, 0.33)));
+    vec3 col = base * (amb * ao + diff * 0.9 * sh);
 
     // Single-bounce reflections
     if (uReflectMode > 0) {
@@ -380,6 +457,14 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     uReflMaxSteps: { value: 0 },
     uReflDoBinarySearch: { value: 0 },
     uF0: { value: 0.05 },
+    // ao/shadow defaults
+    uAOEnabled: { value: 0 },
+    uAOSamples: { value: 0 },
+    uAORadius: { value: 0.0 },
+    uAOIntensity: { value: 1.0 },
+    uShadowEnabled: { value: 0 },
+    uShadowSteps: { value: 0 },
+    uShadowSoftK: { value: 10.0 },
   }), [camera, gl, size.height, size.width])
 
   useFrame((state) => {
@@ -419,6 +504,14 @@ function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boo
     m.uniforms.uReflMaxSteps.value = qp.uReflMaxSteps
     m.uniforms.uReflDoBinarySearch.value = qp.uReflDoBinarySearch
     m.uniforms.uF0.value = qp.uF0
+    // ao/shadow
+    m.uniforms.uAOEnabled.value = qp.uAOEnabled
+    m.uniforms.uAOSamples.value = qp.uAOSamples
+    m.uniforms.uAORadius.value = qp.uAORadius
+    m.uniforms.uAOIntensity.value = qp.uAOIntensity
+    m.uniforms.uShadowEnabled.value = qp.uShadowEnabled
+    m.uniforms.uShadowSteps.value = qp.uShadowSteps
+    m.uniforms.uShadowSoftK.value = qp.uShadowSoftK
   })
 
   return (
