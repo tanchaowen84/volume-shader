@@ -328,7 +328,7 @@ export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
   const { camera } = useThree()
   useEffect(() => {
     const cam = camera as THREE.PerspectiveCamera
-    cam.position.set(3, 2, 6)
+    cam.position.set(1.25, 0.8, 2.0)
     cam.lookAt(0, 0, 0)
     cam.updateProjectionMatrix()
     cam.updateMatrixWorld()
@@ -340,8 +340,8 @@ export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
         makeDefault
         target={[0, 0, 0]}
         enablePan={false}
-        enableZoom={true}
-        enableRotate={true}
+        enableZoom={false}
+        enableRotate={false}
         autoRotate
         autoRotateSpeed={0.25}
         minDistance={2}

@@ -108,7 +108,7 @@ export default function HomePage() {
             <Card className="glass-card p-6">
               <div className="h-[500px] rounded-lg overflow-hidden border border-border relative">
                 <Canvas
-                  camera={{ position: [3, 2, 6], fov: 60 }}
+                  camera={{ position: [1.25, 0.8, 2.0], fov: 58 }}
                   gl={{ antialias: true, alpha: true }}
                   dpr={[1, 1.25]}
                 >
