@@ -152,8 +152,8 @@ const fragmentShader = /* glsl */ `
     vec3 L = normalize(vec3(0.7, 0.6, 0.5));
     float diff = clamp(dot(N, L), 0.0, 1.0);
     float amb  = 0.15;
-    // base color from iteration ratio
-    vec3 base = mix(vec3(0.2, 0.5, 0.9), vec3(1.0, 0.7, 0.4), iterNorm);
+    // vivid palette from iteration ratio (no nested function per GLSL ES)
+    vec3 base = vec3(0.5) + 0.5 * cos(6.28318 * (vec3(iterNorm) + vec3(0.00, 0.15, 0.33)));
     vec3 col = base * (amb + diff * 0.9);
     return col;
   }
