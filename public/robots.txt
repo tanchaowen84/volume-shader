@@ -1,0 +1,18 @@
+# Robots.txt for Volume Shader Benchmark
+# Website: http://localhost:3000
+
+User-agent: *
+Allow: /
+Allow: /api/
+
+# Sitemap location
+Sitemap: http://localhost:3000/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Block common bot paths
+Disallow: /private/
+Disallow: /_next/
+Disallow: /api/private/
+Disallow: *.json$
