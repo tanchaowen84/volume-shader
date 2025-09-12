@@ -336,7 +336,17 @@ export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
   return (
     <>
       <ScreenShader quality={quality} isRunning={isRunning} />
-      <OrbitControls makeDefault target={[0, 0, 0]} enablePan={false} enableZoom={true} enableRotate={true} minDistance={2} maxDistance={50} />
+      <OrbitControls
+        makeDefault
+        target={[0, 0, 0]}
+        enablePan={false}
+        enableZoom={true}
+        enableRotate={true}
+        autoRotate
+        autoRotateSpeed={0.25}
+        minDistance={2}
+        maxDistance={50}
+      />
       <PerformanceMonitor onUpdate={onPerformanceUpdate} isRunning={isRunning} />
     </>
   )
