@@ -5,8 +5,7 @@ import { Canvas } from "@react-three/fiber"
 import { VolumeRendererScene } from "@/components/volume-renderer-scene"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Play, Square, Zap, Settings } from "lucide-react"
-import Link from "next/link"
+import { Play, Square, Zap } from "lucide-react"
 
 export default function HomePage() {
   const [isRunning, setIsRunning] = useState(false)
@@ -34,12 +33,7 @@ export default function HomePage() {
               <Zap className="w-8 h-8 text-primary neon-glow" />
               <h1 className="text-2xl font-bold neon-text">Volume Shader Benchmark</h1>
             </div>
-            <Link href="/compare">
-              <Button variant="outline" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Compare Renderers
-              </Button>
-            </Link>
+            {/* Removed compare/test/debug links; keep header minimal */}
           </div>
         </div>
       </header>
