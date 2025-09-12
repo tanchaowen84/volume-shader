@@ -1,0 +1,172 @@
+{
+  "lang": "en",
+  "meta": {
+    "title": "Volume Shader Benchmark – Professional GPU Performance Test | Real‑time FPS Scoring",
+    "description": "Online volume shader benchmark with three quality levels, real‑time FPS monitoring, and a five‑tier scoring system. Test if your GPU can handle advanced volume shader rendering in the browser."
+  },
+  "hero": {
+    "h1": "Volume Shader Benchmark – Professional GPU Performance Test",
+    "subtitle": "Run a demanding volume shader in your browser, monitor real‑time FPS, and compare results across quality modes to understand true GPU performance under advanced volumetric workloads.",
+    "cta": "Start Benchmark"
+  },
+  "sections": [
+    {
+      "id": "what",
+      "h2": "What Is Volume Shader Testing?",
+      "paragraphs": [
+        "A volume shader evaluates how a GPU handles rendering data that occupies a three‑dimensional region rather than a simple surface. In practical terms, a volume shader stresses heavy math, iterative ray marching, and precision operations through dense fields. Because a volume shader computes lighting, distance estimates, and shading while traversing volumetric space, it exposes performance ceilings that surface‑only scenes often hide.",
+        "Unlike lightweight demos, a volume shader benchmark pushes hardware with cumulative steps per pixel and strict epsilon thresholds. This profile reveals how stable your frame time is when many samples accumulate along a ray. If a GPU struggles to sustain consistent throughput, the volume shader will show stutter or thermal throttling faster than most traditional tests.",
+        "Our benchmark renders a Mandelbulb fractal through signed distance field ray marching. While not identical to every scientific or cinematic pipeline, this volume shader is intentionally compute‑intensive and reproducible, making it a credible proxy for complex volumetric scenes."
+      ]
+    },
+    {
+      "id": "features",
+      "h2": "Advanced Testing Features",
+      "bullets": [
+        "Three Quality Modes: Low (320 steps), Medium (1024 steps + reflection), and High (1024 steps + glossy reflection + soft shadows). Each mode scales the volume shader workload to map a broad device range.",
+        "Real‑time Scoring System: Platinum (90+), Gold (75+), Silver (60+), Bronze (45+), Basic (<45). Scores translate raw FPS into clear tiers for the volume shader scenario.",
+        "Professional Rendering Path: SDF ray marching with binary search refinement, surface normals from central differences, and optional single‑bounce reflections—all executed inside the volume shader.",
+        "Live Metrics: On‑screen FPS and frame‑time tracking while the volume shader runs, helping you diagnose consistency versus peak performance."
+      ],
+      "paragraphs": [
+        "Every feature is designed to expose how your device behaves under sustained pressure. If the volume shader maintains a steady frame time across modes, your GPU is likely ready for advanced visual workloads beyond simple texture and raster operations."
+      ]
+    },
+    {
+      "id": "tech",
+      "h2": "Why Choose This Benchmark?",
+      "bullets": [
+        "WebGL 2.0 Rendering: Modern browser APIs execute the volume shader consistently across platforms, reducing driver‑specific surprises.",
+        "Adaptive Device Pixel Ratio: The benchmark tunes DPR to balance visual sharpness and stability so the volume shader reflects real‑world behavior on mobile and desktop.",
+        "Memory and Stability Safeguards: Step counts, epsilon values, and marching distances are bounded to protect the browser while the volume shader is active.",
+        "Mandelbulb Volumetric Complexity: This fractal’s distance estimator makes the volume shader more demanding than many typical particle or post‑effect tests."
+      ],
+      "paragraphs": [
+        "In short, the test represents a deliberately heavy but controlled workload. Because the volume shader computes iterative steps per pixel, it highlights shader ALU strength, cache behavior, and throttling characteristics that ordinary scenes rarely reveal."
+      ]
+    },
+    {
+      "id": "platform",
+      "h2": "Multi‑Platform Testing",
+      "paragraphs": [
+        "The benchmark runs directly in the browser with no installation. If WebGL 2.0 is available and hardware acceleration is enabled, the volume shader will start after you hit the button. On mobile devices, background processes, battery state, and thermal conditions can influence how the volume shader performs, so consider closing extra tabs or connecting to power during testing.",
+        "Desktop browsers typically sustain higher clocks, but laptops may throttle under extended volume shader loads. If you observe falling scores over time, it likely reflects natural thermal behavior rather than a bug."
+      ]
+    },
+    {
+      "id": "guide",
+      "h2": "Understanding Your Results",
+      "paragraphs": [
+        "The score aggregates average FPS while the volume shader runs. Platinum and Gold tiers indicate strong headroom for advanced effects, while Silver and Bronze suggest moderate capacity. A Basic score signals that the device should prefer Low mode or reduced DPR when running a comparable volume shader in real applications.",
+        "Treat FPS stability as seriously as peak numbers. A volume shader exposes micro‑stutter quickly; if frame time spikes, try stepping down quality or reducing background tasks. On mobile, limit screen brightness and keep the device cool."
+      ],
+      "bullets": [
+        "Platinum (90+): Consistent high FPS on the volume shader in Medium or High mode.",
+        "Gold (75+): Smooth in Medium; High mode remains usable for the volume shader but may show occasional dips.",
+        "Silver (60+): Good baseline for the volume shader in Low or Medium, depending on thermal headroom.",
+        "Bronze (45+): Prefer Low mode for the volume shader to keep frame time predictable.",
+        "Basic (<45): Consider Low mode and smaller viewport while running the volume shader."
+      ]
+    },
+    {
+      "id": "reference",
+      "h2": "Device Performance Reference",
+      "paragraphs": [
+        "Results vary by browser, drivers, and thermal constraints. As a guideline, modern desktops should handle the volume shader in Medium mode smoothly, while many phones perform best in Low mode. Thin‑and‑light laptops may achieve Medium initially but step down over time if the volume shader triggers thermal throttling.",
+        "Use this reference as a starting point. If your workflow involves frequent volumetric effects, reproduce the volume shader test in similar conditions—same browser, similar ambient temperature, and no heavy background syncs—to get a reliable baseline."
+      ]
+    },
+    {
+      "id": "faq",
+      "h2": "Frequently Asked Questions",
+      "faq": [
+        {
+          "q": "Why does the test lag on my device?",
+          "a": "A volume shader performs many math steps per pixel, which stresses ALU, caches, and thermal limits. Close extra tabs, lower screen brightness, and switch to Low or Medium mode. If throttling occurs, the volume shader will slow until the device cools."
+        },
+        {
+          "q": "How can I improve my score?",
+          "a": "Keep the browser updated, enable hardware acceleration, and ensure the device is charged and cool. Lowering DPR or selecting a lower quality mode allows the volume shader to maintain steadier frame time, which raises the score."
+        },
+        {
+          "q": "Is my browser compatible?",
+          "a": "Most modern browsers support WebGL 2.0. If the volume shader fails to start, check graphics settings, disable battery saver modes, and confirm hardware acceleration is enabled."
+        },
+        {
+          "q": "What affects the score the most?",
+          "a": "Step count, epsilon thresholds, reflections, and DPR have large impacts. The volume shader is sensitive to thermal throttling, so long sessions may trend downward as temperatures rise."
+        },
+        {
+          "q": "Does resolution change results?",
+          "a": "Yes. Higher resolution multiplies the work per frame. The benchmark adapts DPR to keep the volume shader fair across devices, but a large viewport still increases total cost."
+        },
+        {
+          "q": "Is this representative of production workloads?",
+          "a": "It is a demanding proxy. A volume shader like this Mandelbulb SDF is heavier than many common effects, so treat your result as a worst‑case indicator rather than a universal average."
+        }
+      ]
+    },
+    {
+      "id": "final-cta",
+      "h2": "Ready to Test Your GPU?",
+      "paragraphs": [
+        "Start the benchmark now to see how your device handles a real volume shader under sustained load. Read the on‑screen metrics, switch between modes, and compare your scores after each run to understand stability and headroom. If you rely on heavy volumetric visuals, this volume shader benchmark offers a quick reality check before bigger decisions."
+      ],
+      "cta": "Start Benchmark"
+    }
+  ],
+  "jsonLd": {
+    "webApplication": {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Volume Shader Benchmark",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Web",
+      "description": "Online volume shader benchmark with multi‑quality testing, real‑time FPS, and clear scoring tiers.",
+      "featureList": [
+        "Three quality modes",
+        "Real‑time FPS and five‑tier scoring",
+        "WebGL 2.0 with adaptive DPR",
+        "Mandelbulb SDF ray marching"
+      ]
+    },
+    "faqPage": {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why does the test lag on my device?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A volume shader performs many math steps per pixel, stressing ALU, caches, and thermals. Close extra tabs and try a lower mode."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can I improve my score?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Update your browser, enable hardware acceleration, keep the device cool, and reduce DPR or quality so the volume shader stabilizes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my browser compatible?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most modern browsers support WebGL 2.0; enable hardware acceleration if the volume shader does not start."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What affects the score the most?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Step count, epsilon, reflections, DPR, and temperature shape how the volume shader performs."
+          }
+        }
+      ]
+    }
+  }
+}

@@ -4,7 +4,17 @@
       "Bash(xargs:*)",
       "Bash(pnpm install:*)",
       "WebFetch(domain:cznull.github.io)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:www.shadertoy.com)",
+      "WebFetch(domain:docs.unity3d.com)",
+      "WebFetch(domain:iquilezles.org)",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:computergraphics.stackexchange.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.androidauthority.com)",
+      "WebFetch(domain:www.notebookcheck.net)",
+      "WebFetch(domain:volume-shader.com)",
+      "WebFetch(domain:volumeshaderbm.com)"
     ],
     "deny": [],
     "ask": []
