@@ -14,7 +14,8 @@
       "WebFetch(domain:www.androidauthority.com)",
       "WebFetch(domain:www.notebookcheck.net)",
       "WebFetch(domain:volume-shader.com)",
-      "WebFetch(domain:volumeshaderbm.com)"
+      "WebFetch(domain:volumeshaderbm.com)",
+      "Bash(pnpm dlx shadcn@latest add:*)"
     ],
     "deny": [],
     "ask": []
