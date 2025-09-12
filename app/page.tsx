@@ -37,18 +37,11 @@ export default function HomePage() {
           {/* Hero Section */}
           <section className="text-center py-16 mb-12">
             <h2 className="text-5xl font-bold mb-6 text-white neon-text">{content.hero.h1}</h2>
-            <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
               {content.hero.subtitle}
             </p>
-            <Button size="lg" className="neon-glow">
-              {content.hero.cta}
-            </Button>
-          </section>
-
-          <Separator className="my-16" />
-
-          {/* Benchmark Demo Section */}
-          <section className="mb-16">
+            
+            {/* Benchmark Demo Section - Integrated with Hero */}
             <div className="max-w-4xl mx-auto">
               <VolumeRenderer />
             </div>
