@@ -1,0 +1,311 @@
+"use client"
+
+import { useMemo, useRef } from "react"
+import { useFrame, useThree } from "@react-three/fiber"
+import { OrbitControls } from "@react-three/drei"
+import * as THREE from "three"
+
+type Quality = "low" | "medium" | "high"
+
+interface SceneProps {
+  quality: Quality
+  isRunning: boolean
+  onPerformanceUpdate: (fps: number, frameTime: number) => void
+}
+
+// Minimal performance monitor (FPS averaged每秒)
+function PerformanceMonitor({ onUpdate, isRunning }: { onUpdate: (fps: number, frameTime: number) => void; isRunning: boolean }) {
+  const frameCount = useRef(0)
+  const lastTime = useRef(typeof performance !== "undefined" ? performance.now() : 0)
+
+  useFrame(() => {
+    if (!isRunning) return
+    frameCount.current++
+    const now = performance.now()
+    const dt = now - lastTime.current
+    if (dt >= 1000) {
+      const fps = (frameCount.current * 1000) / dt
+      const frameTime = dt / frameCount.current
+      onUpdate(fps, frameTime)
+      frameCount.current = 0
+      lastTime.current = now
+    }
+  })
+
+  return null
+}
+
+function getQualityParams(q: Quality) {
+  if (q === "low")
+    return {
+      iMaxSteps: 320,
+      iStepScale: 1.0,
+      iMaxDist: 8.0,
+      iEpsilon: 0.0018,
+      iDoBinarySearch: 0,
+    }
+  if (q === "medium")
+    return {
+      iMaxSteps: 512,
+      iStepScale: 0.75,
+      iMaxDist: 12.0,
+      iEpsilon: 0.0012,
+      iDoBinarySearch: 1,
+    }
+  return {
+    iMaxSteps: 768,
+    iStepScale: 0.6,
+    iMaxDist: 16.0,
+    iEpsilon: 0.0009,
+    iDoBinarySearch: 1,
+  }
+}
+
+// Fullscreen triangle geometry
+function useScreenTriangle() {
+  return useMemo(() => {
+    const geom = new THREE.BufferGeometry()
+    const vertices = new Float32Array([
+      -1, -1, 0,
+      3, -1, 0,
+      -1, 3, 0,
+    ])
+    geom.setAttribute("position", new THREE.BufferAttribute(vertices, 3))
+    return geom
+  }, [])
+}
+
+const vertexShader = /* glsl */ `
+  precision highp float;
+  attribute vec3 position;
+  void main () {
+    gl_Position = vec4(position, 1.0);
+  }
+`
+
+const fragmentShader = /* glsl */ `
+  precision highp float;
+
+  uniform vec2  iResolution;
+  uniform float iTime;
+  uniform int   iRunning;
+  uniform vec3  iCamPos;
+  uniform vec3  iCamRight;
+  uniform vec3  iCamUp;
+  uniform vec3  iCamForward;
+  uniform float iFovY;        // radians
+
+  uniform int   iMaxSteps;
+  uniform float iStepScale;
+  uniform float iMaxDist;
+  uniform float iEpsilon;
+  uniform float iBailout;
+  uniform int   iPower;
+  uniform int   iDoBinarySearch;
+
+  // Hash for tiny dithering
+  float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * .1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+  }
+
+  // Mandelbulb Distance Estimator with iteration out parameter
+  float mandelbulbDE(vec3 pos, out float iterCount) {
+    vec3 z = pos;
+    float dr = 1.0;
+    float r = 0.0;
+    iterCount = 0.0;
+    const int MAX_ITER = 12; // constant upper bound for GLSL
+    for (int i = 0; i < MAX_ITER; i++) {
+      r = length(z);
+      if (r > iBailout) { iterCount = float(i); break; }
+      // Spherical coordinates
+      float theta = acos(z.z / max(r, 1e-6));
+      float phi   = atan(z.y, z.x);
+      float zr    = pow(r, float(iPower));
+      dr = zr * float(iPower) * dr + 1.0;
+      theta *= float(iPower);
+      phi   *= float(iPower);
+      z = zr * vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+      z += pos;
+      if (i == MAX_ITER - 1) iterCount = float(MAX_ITER);
+    }
+    return 0.5 * log(max(r, 1e-6)) * r / max(dr, 1e-6);
+  }
+
+  // Estimate normal via central differences
+  vec3 calcNormal(vec3 p) {
+    float dummy; // unused out param
+    vec2 e = vec2(1.0, -1.0) * max(iEpsilon * 0.5, 0.001);
+    return normalize(
+      e.xyy * mandelbulbDE(p + e.xyy, dummy) +
+      e.yyx * mandelbulbDE(p + e.yyx, dummy) +
+      e.yxy * mandelbulbDE(p + e.yxy, dummy) +
+      e.xxx * mandelbulbDE(p + e.xxx, dummy)
+    );
+  }
+
+  // Simple directional lighting with ambient
+  vec3 shade(vec3 p, vec3 N, float iterNorm) {
+    vec3 L = normalize(vec3(0.7, 0.6, 0.5));
+    float diff = clamp(dot(N, L), 0.0, 1.0);
+    float amb  = 0.15;
+    // base color from iteration ratio
+    vec3 base = mix(vec3(0.2, 0.5, 0.9), vec3(1.0, 0.7, 0.4), iterNorm);
+    vec3 col = base * (amb + diff * 0.9);
+    return col;
+  }
+
+  // Ray direction from camera basis + fov
+  vec3 rayDir(vec2 fragCoord) {
+    vec2 ndc = (fragCoord / iResolution) * 2.0 - 1.0;
+    ndc.y *= -1.0; // flip Y because screen coords origin is top-left
+    float sy = tan(0.5 * iFovY);
+    float sx = sy * (iResolution.x / max(iResolution.y, 1.0));
+    vec3 dir = normalize(iCamForward + iCamRight * (ndc.x * sx) + iCamUp * (ndc.y * sy));
+    return dir;
+  }
+
+  void main() {
+    vec2 uv = gl_FragCoord.xy;
+    if (iRunning == 0) {
+      // lightweight gradient when paused
+      vec2 p = uv / max(iResolution, 1.0);
+      gl_FragColor = vec4(mix(vec3(0.02), vec3(0.08, 0.1, 0.15), p.y), 1.0);
+      return;
+    }
+
+    vec3 ro = iCamPos;
+    vec3 rd = rayDir(uv);
+
+    float t = 0.0;
+    float hit = 0.0;
+    float iterAtHit = 0.0;
+
+    // tiny dither to reduce banding
+    float dith = (hash12(uv) - 0.5) * iEpsilon;
+
+    const int MAX_STEPS = 1024; // constant loop bound
+    for (int i = 0; i < MAX_STEPS; i++) {
+      if (i >= iMaxSteps) break;
+      if (t > iMaxDist) break;
+      vec3 p = ro + rd * t;
+      float iterCount;
+      float dist = mandelbulbDE(p, iterCount);
+      if (dist < iEpsilon) {
+        hit = 1.0;
+        iterAtHit = iterCount;
+        // optional binary search refinement
+        if (iDoBinarySearch == 1) {
+          float t0 = max(t - iStepScale * 0.5, 0.0);
+          float t1 = t;
+          for (int j = 0; j < 8; j++) {
+            vec3 pm = ro + rd * ((t0 + t1) * 0.5);
+            float it2; float dm = mandelbulbDE(pm, it2);
+            if (dm < iEpsilon) t1 = (t0 + t1) * 0.5; else t0 = (t0 + t1) * 0.5;
+          }
+          t = (t0 + t1) * 0.5;
+        }
+        break;
+      }
+      t += max(dist + dith, iEpsilon) * iStepScale;
+    }
+
+    if (hit < 0.5) {
+      // background
+      float g = 0.06 + 0.1 * pow(1.0 - rd.y * 0.5, 2.0);
+      gl_FragColor = vec4(vec3(g), 1.0);
+      return;
+    }
+
+    vec3 pos = ro + rd * t;
+    vec3 N = calcNormal(pos);
+    float iterNorm = clamp(iterAtHit / 12.0, 0.0, 1.0);
+    vec3 col = shade(pos, N, iterNorm);
+    // simple tone mapping
+    col = col / (1.0 + col);
+    // gamma
+    col = pow(col, vec3(1.0/2.2));
+    gl_FragColor = vec4(col, 1.0);
+  }
+`
+
+function ScreenShader({ quality, isRunning }: { quality: Quality; isRunning: boolean }) {
+  const geom = useScreenTriangle()
+  const matRef = useRef<THREE.ShaderMaterial>(null)
+  const { camera, size, gl } = useThree()
+  const initialUniforms = useMemo(() => ({
+    iResolution: { value: new THREE.Vector2(size.width * gl.getPixelRatio(), size.height * gl.getPixelRatio()) },
+    iTime: { value: 0 },
+    iRunning: { value: isRunning ? 1 : 0 },
+    iCamPos: { value: new THREE.Vector3() },
+    iCamRight: { value: new THREE.Vector3(1, 0, 0) },
+    iCamUp: { value: new THREE.Vector3(0, 1, 0) },
+    iCamForward: { value: new THREE.Vector3(0, 0, -1) },
+    iFovY: { value: (camera as THREE.PerspectiveCamera).fov * Math.PI / 180 },
+    iMaxSteps: { value: 512 },
+    iStepScale: { value: 0.75 },
+    iMaxDist: { value: 12.0 },
+    iEpsilon: { value: 0.0012 },
+    iBailout: { value: 2.7 },
+    iPower: { value: 8 },
+    iDoBinarySearch: { value: 1 },
+  }), [camera, gl, size.height, size.width, isRunning])
+
+  useFrame((state) => {
+    if (!matRef.current) return
+    const m = matRef.current
+
+    // Resolution (respect dpr clamp from Canvas)
+    const dpr = gl.getPixelRatio()
+    m.uniforms.iResolution.value.set(size.width * dpr, size.height * dpr)
+
+    // Time gate
+    if (isRunning) m.uniforms.iTime.value = state.clock.elapsedTime
+    m.uniforms.iRunning.value = isRunning ? 1 : 0
+
+    // Camera basis
+    const cam = camera as THREE.PerspectiveCamera
+    const right = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 0)
+    const up = new THREE.Vector3().setFromMatrixColumn(cam.matrixWorld, 1)
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(cam.quaternion).normalize()
+    m.uniforms.iCamPos.value.copy(cam.position)
+    m.uniforms.iCamRight.value.copy(right)
+    m.uniforms.iCamUp.value.copy(up)
+    m.uniforms.iCamForward.value.copy(forward)
+    m.uniforms.iFovY.value = cam.fov * Math.PI / 180
+
+    // Quality mapping
+    const qp = getQualityParams(quality)
+    m.uniforms.iMaxSteps.value = qp.iMaxSteps
+    m.uniforms.iStepScale.value = qp.iStepScale
+    m.uniforms.iMaxDist.value = qp.iMaxDist
+    m.uniforms.iEpsilon.value = qp.iEpsilon
+    m.uniforms.iDoBinarySearch.value = qp.iDoBinarySearch
+  })
+
+  return (
+    <mesh geometry={geom} frustumCulled={false}>
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        depthTest={false}
+        depthWrite={false}
+        transparent={false}
+        uniforms={initialUniforms}
+      />
+    </mesh>
+  )
+}
+
+export function Scene({ quality, isRunning, onPerformanceUpdate }: SceneProps) {
+  return (
+    <>
+      <ScreenShader quality={quality} isRunning={isRunning} />
+      <OrbitControls enablePan={false} enableZoom={true} enableRotate={true} minDistance={2} maxDistance={50} />
+      <PerformanceMonitor onUpdate={onPerformanceUpdate} isRunning={isRunning} />
+    </>
+  )
+}

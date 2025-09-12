@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs:*)",
+      "Bash(pnpm install:*)",
+      "WebFetch(domain:cznull.github.io)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
