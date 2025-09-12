@@ -12,6 +12,7 @@ export default function HomePage() {
   const [isRunning, setIsRunning] = useState(false)
   const [quality, setQuality] = useState<"low" | "medium" | "high">("medium")
   const [score, setScore] = useState(0)
+  const [fps, setFps] = useState(0)
   const [grade, setGrade] = useState("Basic")
 
   const handleStart = () => {
@@ -80,6 +81,10 @@ export default function HomePage() {
                     <div className="text-xs text-muted-foreground">Score</div>
                   </div>
                   <div className="text-center">
+                    <div className="text-2xl font-bold neon-text">{Math.round(fps)}</div>
+                    <div className="text-xs text-muted-foreground">FPS</div>
+                  </div>
+                  <div className="text-center">
                     <div className="text-lg font-semibold text-secondary neon-text">{grade}</div>
                     <div className="text-xs text-muted-foreground">Grade</div>
                   </div>
@@ -118,8 +123,9 @@ export default function HomePage() {
                       <VolumeRendererScene
                         isRunning={isRunning}
                         quality={quality}
-                        onPerformanceUpdate={(fps, frameTime) => {
-                          const newScore = Math.min(100, Math.max(0, (fps / 60) * 100))
+                        onPerformanceUpdate={(fpsVal, frameTime) => {
+                          setFps(fpsVal)
+                          const newScore = Math.min(100, Math.max(0, (fpsVal / 60) * 100))
                           setScore(newScore)
                           if (newScore >= 90) setGrade("Platinum")
                           else if (newScore >= 75) setGrade("Gold")
