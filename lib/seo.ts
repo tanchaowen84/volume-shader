@@ -47,13 +47,12 @@ export function getSEOTags(config: SEOConfig = {}) {
       images,
     },
     
-    // Twitter
+    // Twitter (no handle by default; add creator/site later if available)
     twitter: {
       card: 'summary_large_image',
       title,
       description,
       images: images[0]?.url,
-      creator: '@volumeshader', // Replace with actual Twitter handle
     },
     
     // Canonical URL
@@ -62,8 +61,6 @@ export function getSEOTags(config: SEOConfig = {}) {
     },
     
     // Additional Meta Tags
-    other: {
-      'twitter:site': '@volumeshader', // Replace with actual Twitter handle
-    },
+    // (Intentionally no twitter:site/creator to avoid placeholder data)
   }
 }

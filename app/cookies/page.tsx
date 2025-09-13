@@ -23,7 +23,7 @@ export default function CookiesPage() {
             <p>
               This Cookies Policy explains how {SITE_NAME} uses cookies and similar technologies on our
               website. For how we handle personal data more generally, see our
-              {' '}<a href="/privacy">Privacy Policy</a>.
+              {' '}<a href="/privacy" title="Read our Privacy Policy">Privacy Policy</a>.
             </p>
 
             <h2>What Are Cookies?</h2>
@@ -130,4 +130,3 @@ export default function CookiesPage() {
     </div>
   )
 }
-

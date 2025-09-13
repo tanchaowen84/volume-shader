@@ -50,7 +50,7 @@ export default function PrivacyPage() {
                 “Analytics” below for providers.
               </li>
               <li>
-                Cookies and similar technologies: see our <a href="/cookies">Cookies Policy</a> for
+                Cookies and similar technologies: see our <a href="/cookies" title="Read our Cookies Policy">Cookies Policy</a> for
                 details and choices.
               </li>
             </ul>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
               <li>Operate and improve the site and benchmark experience.</li>
               <li>Measure performance, reliability, and usage to guide product decisions.</li>
               <li>Detect, prevent, and investigate security incidents or abuse.</li>
-              <li>Comply with legal obligations and enforce our <a href="/terms">Terms of Use</a>.</li>
+              <li>Comply with legal obligations and enforce our <a href="/terms" title="Read our Terms of Use">Terms of Use</a>.</li>
               <li>Communicate with you about inquiries or support requests.</li>
             </ul>
 
@@ -183,4 +183,3 @@ export default function PrivacyPage() {
     </div>
   )
 }
-
