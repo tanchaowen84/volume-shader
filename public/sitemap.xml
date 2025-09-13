@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Static sitemap for production.
-  Replace https://your-domain.com with your final domain before launch.
+  Domain: https://volumeshader.app
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <!-- Homepage -->
   <url>
-    <loc>https://your-domain.com</loc>
+    <loc>https://volumeshader.app</loc>
     <lastmod>2025-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://your-domain.com" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://volumeshader.app" />
   </url>
 
   <!-- Policies -->
   <url>
-    <loc>https://your-domain.com/privacy</loc>
+    <loc>https://volumeshader.app/privacy</loc>
     <lastmod>2025-09-13</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://your-domain.com/terms</loc>
+    <loc>https://volumeshader.app/terms</loc>
     <lastmod>2025-09-13</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://your-domain.com/cookies</loc>
+    <loc>https://volumeshader.app/cookies</loc>
     <lastmod>2025-09-13</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
@@ -35,11 +35,13 @@
 
   <!-- Additional pages can be added here when created -->
   <!-- Example:
+  <!-- Example for future pages:
   <url>
-    <loc>https://your-domain.com/about</loc>
+    <loc>https://volumeshader.app/about</loc>
     <lastmod>2025-09-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  -->
   -->
 </urlset>

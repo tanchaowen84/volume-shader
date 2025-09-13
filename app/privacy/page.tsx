@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 }
 
 const SITE_NAME = 'Volume Shader Benchmark'
-const CONTACT_EMAIL = 'contact@example.com' // TODO: replace with your real contact
+const CONTACT_EMAIL = 'support@volumeshader.app'
 const EFFECTIVE_DATE = 'September 13, 2025'
 
 export default function PrivacyPage() {

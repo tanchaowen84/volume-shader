@@ -90,7 +90,7 @@ pnpm start
 Create `.env` from `.env.example` and set at least your site URL:
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://your-domain.com
+NEXT_PUBLIC_SITE_URL=https://volumeshader.app
 NEXT_PUBLIC_SITE_NAME=Volume Shader Benchmark
 NEXT_PUBLIC_DEFAULT_LOCALE=en
 
@@ -99,7 +99,7 @@ NEXT_PUBLIC_DEFAULT_LOCALE=en
 NEXT_PUBLIC_GA_ID=G-XXXXXXX
 NEXT_PUBLIC_VERCEL_ANALYTICS_ID=... (managed by Vercel platform)
 # Plausible: when NEXT_PUBLIC_PLAUSIBLE_DOMAIN is set, Plausible script is injected
-NEXT_PUBLIC_PLAUSIBLE_DOMAIN=your-domain.com
+NEXT_PUBLIC_PLAUSIBLE_DOMAIN=volumeshader.app
 # Optional overrides (e.g., self-hosted Plausible)
 NEXT_PUBLIC_PLAUSIBLE_SRC=https://plausible.io/js/script.js
 NEXT_PUBLIC_PLAUSIBLE_API=
@@ -146,7 +146,7 @@ public/
 ## SEO & Sitemap/Robots
 
 - The project uses a static `public/robots.txt` and a static `public/sitemap.xml`.
-- Before launch, replace `https://your-domain.com` in `public/sitemap.xml` with your real domain.
+- `public/sitemap.xml` is configured for `https://volumeshader.app`.
 - Open Graph/Twitter tags come from `lib/seo.ts` and `content/home.en.json` (JSON‑LD).
 
 ## Analytics
@@ -189,3 +189,4 @@ Development notes
 - © 2025 Volume Shader Benchmark. All rights reserved.
 - Use at your own risk. The benchmark may increase device temperature and power usage.
 - Policies: see `/privacy`, `/terms`, and `/cookies`.
+ - Support: support@volumeshader.app
