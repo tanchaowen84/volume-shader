@@ -6,6 +6,7 @@ import content from '@/content/home.en.json'
 import { getSEOTags } from '@/lib/seo'
 import Script from 'next/script'
 import './globals.css'
+import Footer from '@/components/footer'
 
 export const metadata: Metadata = getSEOTags({
   title: content.meta.title,
@@ -29,6 +30,7 @@ export default function RootLayout({
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         {children}
+        <Footer />
         <Analytics />
       </body>
     </html>

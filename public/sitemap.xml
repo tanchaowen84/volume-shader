@@ -13,6 +13,26 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://your-domain.com" />
   </url>
 
+  <!-- Policies -->
+  <url>
+    <loc>https://your-domain.com/privacy</loc>
+    <lastmod>2025-09-13</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://your-domain.com/terms</loc>
+    <lastmod>2025-09-13</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://your-domain.com/cookies</loc>
+    <lastmod>2025-09-13</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
   <!-- Additional pages can be added here when created -->
   <!-- Example:
   <url>

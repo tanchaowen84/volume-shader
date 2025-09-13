@@ -109,10 +109,22 @@ export function VolumeRenderer() {
           )
         })()}
         {!isRunning && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div className="text-center">
-              <div className="text-4xl mb-2">🔮</div>
-              <p className="text-white/80">Click Start Test to begin volume rendering</p>
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* Background Image */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: "url('/volume-shader.png')" }}
+            />
+            {/* Overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+            {/* Content */}
+            <div className="relative text-center z-10">
+              <p className="text-white/90 text-lg font-medium drop-shadow-lg">
+                Click Start Test to begin real-time volume rendering
+              </p>
+              <p className="text-white/70 text-sm mt-2 drop-shadow-md">
+                Experience the full Mandelbulb fractal animation
+              </p>
             </div>
           </div>
         )}

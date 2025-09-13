@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Zap, Cpu, Monitor, Smartphone, Trophy } from "lucide-react"
+import { Cpu, Monitor, Smartphone, Github } from "lucide-react"
 import dynamic from 'next/dynamic'
 
 // Dynamically import the client-side components to avoid SSR issues
@@ -24,8 +24,20 @@ export default function HomePage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Zap className="w-8 h-8 text-primary neon-glow" />
+              <img src="/favicon.ico" alt="Volume Shader Benchmark" className="w-8 h-8" />
               <h1 className="text-2xl font-bold neon-text">Volume Shader Benchmark</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <a
+                href="https://github.com/tanchaowen84/volume-shader"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Open GitHub repository"
+                className="inline-flex items-center gap-2 text-sm text-white/80 hover:text-white"
+              >
+                <Github className="w-5 h-5" />
+                <span>volume shader</span>
+              </a>
             </div>
           </div>
         </div>
