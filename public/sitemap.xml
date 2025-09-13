@@ -1,47 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  Static sitemap for production.
-  Domain: https://volumeshader.app
--->
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <!-- Homepage -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+  <!-- Homepage - Main landing page -->
   <url>
-    <loc>https://volumeshader.app</loc>
-    <lastmod>2025-09-13</lastmod>
+    <loc>https://volumeshader.app/</loc>
+    <lastmod>2025-09-13T00:00:00+00:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://volumeshader.app" />
   </url>
 
-  <!-- Policies -->
+  <!-- Privacy Policy Page -->
   <url>
     <loc>https://volumeshader.app/privacy</loc>
-    <lastmod>2025-09-13</lastmod>
+    <lastmod>2025-09-13T00:00:00+00:00</lastmod>
     <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://volumeshader.app/terms</loc>
-    <lastmod>2025-09-13</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://volumeshader.app/cookies</loc>
-    <lastmod>2025-09-13</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.3</priority>
   </url>
 
-  <!-- Additional pages can be added here when created -->
-  <!-- Example:
-  <!-- Example for future pages:
+  <!-- Terms of Service Page -->
   <url>
-    <loc>https://volumeshader.app/about</loc>
-    <lastmod>2025-09-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://volumeshader.app/terms</loc>
+    <lastmod>2025-09-13T00:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
-  -->
-  -->
+
+  <!-- Cookies Policy Page -->
+  <url>
+    <loc>https://volumeshader.app/cookies</loc>
+    <lastmod>2025-09-13T00:00:00+00:00</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

@@ -5,9 +5,6 @@ Allow: /api/
 # Single source of truth for sitemap
 Sitemap: /sitemap.xml
 
-# Optional crawl delay (tune or remove as needed)
-Crawl-delay: 1
-
 # Block common internal paths
 Disallow: /private/
 Disallow: /_next/
