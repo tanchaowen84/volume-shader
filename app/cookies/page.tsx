@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { Card, CardContent } from '@/components/ui/card'
+import { getSEOTags } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = getSEOTags({
   title: 'Cookies Policy – Volume Shader Benchmark',
   description:
     'Details about cookies and similar technologies used by Volume Shader Benchmark, including choices and provider information.',
-}
+  url: 'https://volumeshader.app/cookies',
+})
 
 const SITE_NAME = 'Volume Shader Benchmark'
 const CONTACT_EMAIL = 'support@volumeshader.app'

@@ -3,16 +3,15 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import content from '@/content/home.en.json'
-import { getSEOTags } from '@/lib/seo'
 import Script from 'next/script'
 import './globals.css'
 import Footer from '@/components/footer'
 const IS_PROD = process.env.NODE_ENV === 'production'
 
-export const metadata: Metadata = getSEOTags({
+export const metadata: Metadata = {
   title: content.meta.title,
   description: content.meta.description,
-})
+}
 
 export default function RootLayout({
   children,

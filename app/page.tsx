@@ -1,10 +1,18 @@
+import type { Metadata } from 'next'
 import content from '@/content/home.en.json'
+import { getSEOTags } from '@/lib/seo'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Cpu, Monitor, Smartphone, Github } from "lucide-react"
 import dynamic from 'next/dynamic'
+
+export const metadata: Metadata = getSEOTags({
+  title: content.meta.title,
+  description: content.meta.description,
+  url: 'https://volumeshader.app',
+})
 
 // Dynamically import the client-side components to avoid SSR issues
 const VolumeRenderer = dynamic(() => import('@/components/volume-renderer').then(mod => ({ default: mod.VolumeRenderer })), { 
